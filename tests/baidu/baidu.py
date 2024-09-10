@@ -4,6 +4,8 @@ from crawlab import Request
 
 class BaiduSpider(Spider):
 
+    custom_settings = {"CONCURRENCY": 1}
+
     start_urls = ["https://www.baidu.com/", "https://jd.com/"]
 
     async def parse(self, response):

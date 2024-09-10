@@ -1,10 +1,11 @@
 import asyncio
 from inspect import iscoroutine
 from typing import Generator, Optional
-from crawlab.core import task_manager
 from crawlab.core.downloader import Downloader
 from crawlab.core.scheduler import Scheduler
 from crawlab.core.task_manager import TaskManager
+
+# from crawlab.crawler import Crawler
 from crawlab.spider import Spider
 from crawlab import Request
 from crawlab.utils.spider import transform
@@ -12,10 +13,14 @@ from crawlab.utils.spider import transform
 
 class Engine:
 
-    def __init__(self):
+    def __init__(self, crawler):
+        self.crawler = crawler
+        self.settings = self.crawler.settings
         self.downloader: Optional[Downloader] = None
         self.scheduler: Optional[Scheduler] = None
-        self.task_manager: Optional[TaskManager] = None
+        self.task_manager: TaskManager = TaskManager(
+            self.settings.getint("CONCURRENCY")
+        )
         self.start_requests: Optional[Generator] = None
         self.spider: Optional[Spider] = None
         self.running = False
@@ -25,7 +30,6 @@ class Engine:
         self.spider = spider
         self.downloader = Downloader()
         self.scheduler = Scheduler()
-        self.task_manager = TaskManager()
         if hasattr(self.scheduler, "open"):
             self.scheduler.open()
         self.start_requests = iter(spider.start_requests())

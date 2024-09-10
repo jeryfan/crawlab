@@ -1,6 +1,15 @@
 import os, sys
 import time
 
+import os, sys
+
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+project_dir = os.path.dirname(project_dir)
+print(project_dir)
+sys.path.append(project_dir)
+
+from crawlab.crawler import CrawlerProcess
+
 
 project_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,11 +22,9 @@ from crawlab.utils.project import get_settings
 
 
 async def main():
-    # spider = BaiduSpider()
-    # engine = Engine()
-    # await engine.start_spider(spider)
-    settings = get_settings()
-    print(settings.items())
+    crawlerProcess = CrawlerProcess(settings=get_settings())
+    await crawlerProcess.crawl(BaiduSpider)
+    await crawlerProcess.start()
 
 
 start = time.time()

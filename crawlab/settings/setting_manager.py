@@ -1,4 +1,5 @@
 from collections.abc import MutableMapping
+from copy import deepcopy
 from typing import Iterator
 from crawlab.settings import default_settings
 from importlib import import_module
@@ -78,3 +79,6 @@ class SettingManager(MutableMapping):
 
     def __len__(self) -> int:
         return len(self.attributes)
+
+    def copy(self):
+        return deepcopy(self)
