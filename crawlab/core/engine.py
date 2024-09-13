@@ -2,10 +2,12 @@ import asyncio
 from inspect import iscoroutine
 from typing import Generator, Optional
 from crawlab.core.downloader import Downloader
+from crawlab.core.processor import Processor
 from crawlab.core.scheduler import Scheduler
 from crawlab.core.task_manager import TaskManager
 
 # from crawlab.crawler import Crawler
+from crawlab.items.items import Item
 from crawlab.spider import Spider
 from crawlab import Request
 from crawlab.utils.spider import transform
@@ -18,6 +20,7 @@ class Engine:
         self.settings = self.crawler.settings
         self.downloader: Optional[Downloader] = None
         self.scheduler: Optional[Scheduler] = None
+        self.processor: Optional[Processor] = None
         self.task_manager: TaskManager = TaskManager(
             self.settings.getint("CONCURRENCY")
         )
@@ -30,6 +33,7 @@ class Engine:
         self.spider = spider
         self.downloader = Downloader()
         self.scheduler = Scheduler()
+        self.processor = Processor(self.crawler)
         if hasattr(self.scheduler, "open"):
             self.scheduler.open()
         self.start_requests = iter(spider.start_requests())
@@ -89,14 +93,15 @@ class Engine:
 
     async def _handle_spider_output(self, outputs):
         async for output in outputs:
-            if isinstance(output, Request):
-                await self.enqueue_request(output)
+            if isinstance(output, (Request, Item)):
+                await self.processor.enqueue(output)
 
     async def _exit(self):
         if (
             self.scheduler.done()
             and self.downloader.done()
             and self.task_manager.done()
+            and self.processor.done()
         ):
             return True
         return False
