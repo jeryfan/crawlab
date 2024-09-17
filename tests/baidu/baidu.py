@@ -8,7 +8,7 @@ class BaiduSpider(Spider):
 
     custom_settings = {"CONCURRENCY": 5}
 
-    start_urls = ["https://www.baidu.com111/", "https://jd.com/"]
+    start_urls = ["https://www.baidu.com/", "https://jd.com/"]
 
     async def parse(self, response):
         for i in range(10):
