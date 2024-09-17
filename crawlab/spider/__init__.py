@@ -25,3 +25,6 @@ class Spider:
 
     def parse(self, response):
         raise NotImplementedError("this method must be implemented")
+
+    def __str__(self) -> str:
+        return self.__class__.__name__

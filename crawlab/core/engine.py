@@ -1,6 +1,7 @@
 import asyncio
 from inspect import iscoroutine
 from typing import Generator, Optional
+import crawlab
 from crawlab.core.downloader import Downloader
 from crawlab.core.processor import Processor
 from crawlab.core.scheduler import Scheduler
@@ -11,12 +12,16 @@ from crawlab.items.items import Item
 from crawlab.spider import Spider
 from crawlab import Request
 from crawlab.utils.spider import transform
+from crawlab.utils.log import get_logger
 
 
 class Engine:
 
     def __init__(self, crawler):
         self.crawler = crawler
+        self.logger = get_logger(
+            self.__class__.__name__, level=crawler.settings.getint("LOG_LEVEL")
+        )
         self.settings = self.crawler.settings
         self.downloader: Optional[Downloader] = None
         self.scheduler: Optional[Scheduler] = None
@@ -30,8 +35,13 @@ class Engine:
 
     async def start_spider(self, spider: Spider):
         self.running = True
+        self.logger.info(
+            f"start spider:project_name={self.settings.get('PROJECT_NAME')}"
+        )
         self.spider = spider
-        self.downloader = Downloader()
+        self.downloader = Downloader(self.crawler)
+        if hasattr(self.downloader, "open"):
+            self.downloader.open()
         self.scheduler = Scheduler()
         self.processor = Processor(self.crawler)
         if hasattr(self.scheduler, "open"):
@@ -52,14 +62,18 @@ class Engine:
             except StopIteration:
                 self.start_requests = None
             except Exception as e:
-                if await self._exit():
-                    self.running = False
+                if not await self._exit():
+                    continue
 
-                if not self.running:
-                    break
+                self.running = False
+
+                if self.start_requests is not None:
+                    self.logger.error("Error when crawling: %s", e)
             else:
                 # enqueue request
                 await self.enqueue_request(start_request)
+        if not self.running:
+            await self.downloader.close()
 
     async def _crawl(self, request: Request):
         async def crawl_task():
